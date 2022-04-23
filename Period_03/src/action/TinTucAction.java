@@ -11,14 +11,12 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.sql.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 /**
  *
  * @author Quan
  */
 public class TinTucAction {
-    private Statement st;
+    private static Statement st;
     private static final String DATABASE = "tintuc";
     public TinTucAction() {
         st = ConnectMySQL.getConnectMySQL(DATABASE);
@@ -36,19 +34,77 @@ public class TinTucAction {
         }
     }
     
+    public void UpdateDanhMuc() {
+        int id = inputPossitiveInt("Nhap id danh muc can chinh sua: ");
+        if(isExistSQL(id)) {
+            String update = initString("Nhap thong tin can cap nhat: ");
+            try {
+                st.executeUpdate("UPDATE danhmuctin SET tendanhmuc = '"
+                        + update 
+                        + "' WHERE id = " + id);
+            } catch(Exception e) {
+                System.out.println("Khong the cap nhat!");
+            }
+        } else {
+            System.out.println("ID khong ton tai!");
+        }
+        
+    }
+    
     public void ShowDanhMuc() {
         try {
-            ResultSet rs = st.executeQuery("SELECT * FROM danhmuctin");
-            if(!rs.first()) {
-                System.out.println("Danh sach rong!");
-            } else {
-                while(rs.next()) {
-                    System.out.printf("%-2s | ",rs.getInt("id")+"");
-                    System.out.println(rs.getString("tendanhmuc"));
-                }
-            } 
+            int id = inputPossitiveInt("Nhap id de hien thi: ");
+            ResultSet rs = st.executeQuery("SELECT * FROM danhmuctin WHERE id >= " + id);
+            while(rs.next()) {
+                System.out.printf("%-2s | ",rs.getInt("id")+"");
+                System.out.println(rs.getString("tendanhmuc"));
+            }
         } catch(Exception e) {
             System.out.println("Khong the lay du lieu!");
+        }
+    }
+    
+    public void SearchDanhMuc() {
+        try {
+            String search = initString("Nhap thong tin can tim kiem: ");
+            ResultSet rs = st.executeQuery("SELECT * FROM danhmuctin "
+                    +"WHERE tendanhmuc LIKE '%"+ search +"%'");
+            boolean check = false;
+            while(rs.next()) {
+                check = true;
+                System.out.printf("%-2s | ",rs.getInt("id")+"");
+                System.out.println(rs.getString("tendanhmuc"));
+            }
+            if(!check) {
+                System.out.println("Khong tim thay!");
+            }
+        } catch(Exception e) {
+            System.out.println("Khong the lay du lieu!");
+        }
+    }
+    
+    public void DeleteDanhMuc() {
+        int id = inputPossitiveInt("Nhap id can xoa: ");
+        try {
+            st.executeUpdate("DELETE FROM danhmuctin WHERE id = " + id);
+            System.out.println("Da xoa id = " + id);
+        } catch(Exception e) {
+            System.out.println("Khong the xoa du lieu!");
+        }
+    }
+    
+    static boolean isExistSQL(int id) {
+        try {
+            ResultSet rs = st.executeQuery("SELECT * FROM danhmuctin");
+            while(rs.next()) {
+                if(id == rs.getInt("id")) {
+                    return true;
+                }
+            }
+            
+            return false;
+        } catch(Exception e) {
+            return false;
         }
     }
     
@@ -59,7 +115,7 @@ public class TinTucAction {
                 Scanner scan = new Scanner(System.in);
                 String str = scan.nextLine();
 
-                Pattern p = Pattern.compile("^[A-Za-z\\s]{2,100}$");
+                Pattern p = Pattern.compile("^[A-Za-z-\\s]{2,100}$");
                 Matcher m = p.matcher(str.strip());
                 boolean b = m.find();
 
